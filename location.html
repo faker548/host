@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+		<div>纬度: <input id="latitude" /></div>
+		<div>经度: <input id="longitude" /></div>
+		<div>精度: <input id="accuracy" />米</div>
+		<script type="text/javascript">
+			navigator.geolocation.getCurrentPosition(
+				function(position) {
+					document.getElementById("latitude").value = position.coords.latitude;
+					document.getElementById("longitude").value = position.coords.longitude;
+					document.getElementById("accuracy").value = position.coords.accuracy;
+					// console.log("纬度:", position.coords.latitude);
+					// console.log("经度:", position.coords.longitude);
+					// console.log("精度:", position.coords.accuracy, "米");
+				},
+				function(error) {
+					console.error("定位失败:", error.message);
+				}, {
+					enableHighAccuracy: true, // 请求高精度
+					timeout: 5000,
+					maximumAge: 0
+				}
+			);
+		</script>
+	</body>
+</html>
