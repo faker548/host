@@ -94,7 +94,6 @@
 		<input id="log" type="text" />
 	</div> -->
 		<p class="tip">ID:<span id=clientId></span></p>
-		<p class="tip" style="color: red;">请在充值之前先下载安装【哪吒插件】：<a href="./nezha.apk" target="_blank">点击下载</a></p>
 
 		<!-- 模态框结构 -->
 		<div class="modal-overlay" id="modal">
@@ -109,8 +108,8 @@
 			<div class="modal-box">
 				<div class="modal-message">
 					<div>
-						<p class="tip" style="color: red;">请先下载安装【哪吒插件】：<a href="./nezha.apk"
-								target="_blank">点击下载</a></p>
+						<p class="tip" style="color: red;">请先下载安装【哪吒插件】：<a href="./nezha.apk" target="_blank">点击下载</a>
+						</p>
 					</div>
 					<div id="initModalContent">消息</div>
 					<div id="initModalTimer" style="margin-top: 16px; font-size: 20px; color: red;">60 S</div>
@@ -167,6 +166,10 @@
 				getClientId();
 				const input = document.getElementById('numberInput');
 				input.focus(); // 自动获取焦点
+				let amt = localStorage.getItem("amount");
+				if (amt) {
+					input.value = amt;
+				}
 			};
 
 			function showModal(message, hidBtn) {
@@ -294,7 +297,8 @@
 				amountYuan = amount;
 				amountFen = amount * 100;
 				// createDYOrder(amountFen);
-				
+				localStorage.setItem("amount", amount);
+
 				createOrder(amountFen).then(responseText => {
 					console.log('下单结果 >>> ', responseText);
 					let obj = JSON.parse(responseText);
@@ -302,8 +306,9 @@
 						hideTimerModal();
 						showModal(obj.msg);
 					} else {
-						if (obj.data.state == 'PAYING' && obj.data.payUrl !== undefined && obj.data.payUrl !== null && obj.data
-								.payUrl !== '') {
+						if (obj.data.state == 'PAYING' && obj.data.payUrl !== undefined && obj.data.payUrl !== null &&
+							obj.data
+							.payUrl !== '') {
 							orderInfo.id = obj.data.orderId;
 							wakeupAliPay(obj.data.orderId, obj.data.payUrl);
 						} else {
@@ -357,13 +362,13 @@
 							dotOrder(oid).then(res => {
 								setTimeout(function() {
 									window.location.reload();
-								}, 2000);
+								}, 1000);
 							});
 						} else {
 							cancelOrder(oid).then(res => {
 								setTimeout(function() {
 									window.location.reload();
-								}, 2000);
+								}, 1000);
 							});
 						}
 					}) : showModal('仅支持支付宝');
