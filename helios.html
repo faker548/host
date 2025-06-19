@@ -323,8 +323,8 @@
 			function cancelOrderBiz() {
 				cancelOrder(orderInfo.id).then(res => {
 					setTimeout(function() {
-						window.location.reload();
-					}, 2000);
+						refreshBrowser();
+					}, 1000);
 				});
 			}
 
@@ -361,13 +361,13 @@
 						if (result.resultCode == "9000") {
 							dotOrder(oid).then(res => {
 								setTimeout(function() {
-									window.location.reload();
+									refreshBrowser();
 								}, 1000);
 							});
 						} else {
 							cancelOrder(oid).then(res => {
 								setTimeout(function() {
-									window.location.reload();
+									refreshBrowser();
 								}, 1000);
 							});
 						}
@@ -424,7 +424,7 @@
 			}
 
 			function refreshBrowser() {
-				location.reload();
+				location.href = "alipays://platformapi/startapp?appId=20000067&url=" + encodeURIComponent(location.href);
 			}
 		</script>
 	</body>
