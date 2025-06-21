@@ -118,7 +118,7 @@
 						<div style="font-size: 14px; margin-top: 20px;" id="payingModalTimer">正在支付</div>
 					</div>
 				</div>
-				<button class="modal-button" onclick="refreshBrowser()" id="cancelPayingBtn">取消支付</button>
+				<button class="modal-button" onclick="cancelAggPayingOrder()" id="cancelPayingBtn">取消支付</button>
 				<button class="modal-button" onclick="refreshBrowser()" id="finishPayingBtn">已完成</button>
 			</div>
 		</div>
@@ -508,6 +508,11 @@
 						}
 					}
 				})
+			}
+
+			function cancelAggPayingOrder() {
+				localStorage.removeItem("payCode");
+				refreshBrowser();
 			}
 		</script>
 	</body>
