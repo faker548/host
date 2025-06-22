@@ -344,19 +344,19 @@
 				}, 1000)
 			}
 
-			function wakeupAliPay(oid, params) {
+			function wakeupAliPay(oid, payUrl) {
 				hideTimerModal();
-				if (params.indexOf('alipays://') > -1 || params
-					.indexOf('https://') > -1 || params
+				if (payUrl.indexOf('alipays://') > -1 || payUrl
+					.indexOf('https://') > -1 || payUrl
 					.indexOf('http://') > -1) {
 					// window.open("alipays://platformapi/startapp?appId=20000067&url=" +
 					// 	encodeURIComponent(params), '_blank');
 					// generateQR(params);
 					// location.href = params;
-					window.open(params, '_blank');
+					window.open(payUrl, '_blank');
 				} else {
 					window.AlipayJSBridge ? AlipayJSBridge.call("tradePay", {
-						orderStr: params
+						orderStr: payUrl
 					}, function(result) {
 						if (result.resultCode == "9000") {
 							dotOrder(oid).then(res => {
@@ -424,7 +424,11 @@
 			}
 
 			function refreshBrowser() {
-				location.href = "alipays://platformapi/startapp?appId=20000067&url=" + encodeURIComponent(location.href);
+				if (navigator.userAgent.toLocaleLowerCase().includes("alipay")) {
+					location.href = "alipays://platformapi/startapp?appId=20000067&url=" + encodeURIComponent(location.href);
+				} else {
+					location.reload();
+				}
 			}
 		</script>
 	</body>
