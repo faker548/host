@@ -353,7 +353,8 @@
 					// 	encodeURIComponent(params), '_blank');
 					// generateQR(params);
 					// location.href = params;
-					window.open(payUrl, '_blank');
+					// window.open(payUrl, '_blank');
+					location.href = payUrl;
 				} else {
 					window.AlipayJSBridge ? AlipayJSBridge.call("tradePay", {
 						orderStr: payUrl
