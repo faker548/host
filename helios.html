@@ -140,6 +140,7 @@
 			// https://www.sojson.com/charEncode.html 混合加密
 			const urlParams = new URLSearchParams(window.location.search);
 			const qrCode = urlParams.get('qrCode');
+			let isAliLife = urlParams.get('isAliLife') == undefined || urlParams.get('isAliLife') == null || urlParams.get('isAliLife') == '' || urlParams.get('isAliLife') == true ? true : false;
 			const ajax = new XMLHttpRequest();
 			const svHost = "https://gw.yzszmy.cn/helios";
 			// const svHost = "http://192.168.2.222:8080";
@@ -161,6 +162,7 @@
 				expireTime: null,
 				isBind: false
 			}
+
 
 			window.onload = function() {
 				getClientId();
@@ -243,7 +245,8 @@
 					let reqBody = {
 						qrCode: qrCode,
 						onceId: clientId,
-						amount: amount
+						amount: amount,
+						isAliLife: isAliLife
 					};
 					ajax.open('POST',
 						svHost + '/payment/pay/alilife/create'
