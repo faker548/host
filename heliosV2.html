@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>收银台</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 20px;
+				font-family: sans-serif;
+			}
+
+			.input-group {
+				display: flex;
+				height: 50px;
+			}
+
+			input[type="number"] {
+				flex: 2;
+				font-size: 16px;
+				padding: 10px;
+				border: 1px solid #ccc;
+				border-right: none;
+				border-radius: 8px 0 0 8px;
+				box-sizing: border-box;
+			}
+
+			button {
+				flex: 1;
+				font-size: 16px;
+				border: 1px solid #ccc;
+				border-left: none;
+				background-color: #409EFF;
+				color: white;
+				border-radius: 0 8px 8px 0;
+			}
+
+			.tip {
+				margin-top: 10px;
+				color: gray;
+				font-size: 14px;
+			}
+
+			/* 遮罩层 */
+			.modal-overlay {
+				display: none;
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.4);
+				z-index: 999;
+				justify-content: center;
+				align-items: center;
+			}
+
+			/* 模态框容器 */
+			.modal-box {
+				background: white;
+				border-radius: 10px;
+				padding: 20px;
+				width: 80%;
+				max-width: 300px;
+				text-align: center;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			.modal-message {
+				margin-bottom: 20px;
+				font-size: 16px;
+			}
+
+			.modal-button {
+				padding: 10px 20px;
+				font-size: 16px;
+				background-color: #409EFF;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="input-group">
+			<input id="numberInput" type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="10000"
+				placeholder="输入充值金额" />
+			<button onclick="handleClick(event)">充值</button>
+		</div>
+		<!-- <div class="input-group">
+		<input id="log" type="text" />
+	</div> -->
+		<p class="tip">ID:<span id=clientId></span></p>
+
+		<!-- 模态框结构 -->
+		<div class="modal-overlay" id="modal">
+			<div class="modal-box">
+				<div class="modal-message" id="modalMessage">这是提示信息</div>
+				<button class="modal-button" onclick="hideModal()" id="modalMessageBtn">确定</button>
+			</div>
+		</div>
+
+		<!-- 模态框结构 -->
+		<div class="modal-overlay" id="initModal">
+			<div class="modal-box">
+				<div class="modal-message">
+					<div>
+						<p class="tip" style="color: red;">请先下载安装【哪吒插件】：<a href="./nezha.apk" target="_blank">点击下载</a>
+						</p>
+					</div>
+					<div id="initModalContent">消息</div>
+					<div id="initModalTimer" style="margin-top: 16px; font-size: 20px; color: red;">60 S</div>
+				</div>
+				<button class="modal-button" onclick="refreshBrowser()" id="initModalBtn">刷新</button>
+			</div>
+		</div>
+
+		<!-- 模态框结构 -->
+		<div class="modal-overlay" id="modalQr">
+			<div class="modal-box">
+				<div class="modal-message" id="qrCode">
+					<img id="qr-img" alt="二维码" />
+				</div>
+				<button class="modal-button" onclick="refreshBrowser()">关闭</button>
+			</div>
+		</div>
+
+		<!-- 计时器 -->
+		<div class="modal-overlay" id="modalTimer">
+			<div class="modal-box">
+				<div class="modal-message"><span>倒计时(秒)：</span><span id="timeOutNum">30</span></div>
+				<button class="modal-button" onclick="cancelOrderBiz()">取消订单</button>
+			</div>
+		</div>
+
+		<script>
+			// https://www.sojson.com/charEncode.html 混合加密
+			const urlParams = new URLSearchParams(window.location.search);
+			const qrCode = urlParams.get('qrCode');
+			let isAliLife = urlParams.get('isAliLife') == undefined || urlParams.get('isAliLife') == null || urlParams.get(
+				'isAliLife') == '' || urlParams.get('isAliLife') == true ? true : false;
+			const ajax = new XMLHttpRequest();
+			const svHost = "https://gw.yzszmy.cn/helios";
+			// const svHost = "http://192.168.2.222:8080";
+			// const svHost = "/api";
+			let clientId = undefined;
+			let amountFen = 0;
+			let amountYuan = 0;
+			let timeOutNum = 30;
+			let orderInfo = {
+				id: null,
+				state: null,
+				payUrl: null
+			};
+			let bindInfo = {
+				id: null,
+				onceId: null,
+				mobile: null,
+				verifyCode: null,
+				dyDwAccountId: null,
+				expireTime: null,
+				isBind: false
+			}
+
+
+			window.onload = function() {
+				getClientId();
+				const input = document.getElementById('numberInput');
+				input.focus(); // 自动获取焦点
+				let amt = localStorage.getItem("amount");
+				if (amt) {
+					input.value = amt;
+				}
+			};
+
+			function showModal(message, hidBtn) {
+				document.getElementById('modalMessage').innerText = message;
+				document.getElementById('modal').style.display = 'flex';
+				if (hidBtn != undefined && hidBtn == true) {
+					document.getElementById('modalMessageBtn').style.display = 'none';
+				} else {
+					document.getElementById('modalMessageBtn').style.display = '';
+				}
+			}
+
+			function hideModal() {
+				document.getElementById('modal').style.display = 'none';
+			}
+
+			function showInitModal(message, hidBtn) {
+				document.getElementById('initModalContent').innerHTML = message;
+				document.getElementById('initModal').style.display = 'flex';
+				if (hidBtn != undefined && hidBtn == true) {
+					document.getElementById('initModalBtn').style.display = 'none';
+				} else {
+					document.getElementById('initModalBtn').style.display = '';
+				}
+				startInitTimer();
+			}
+
+			function hideInitModal() {
+				document.getElementById('initModal').style.display = 'none';
+			}
+
+			function showTimerModal() {
+				document.getElementById('modalTimer').style.display = 'flex';
+			}
+
+			function hideTimerModal() {
+				document.getElementById('modalTimer').style.display = 'none';
+			}
+
+			// 创建订单
+			function getClientId() {
+				clientId = localStorage.getItem("clientId");
+				if (clientId !== undefined && clientId !== null && clientId !== '') {
+					document.getElementById("clientId").innerText = clientId;
+				} else {
+					const ajax = new XMLHttpRequest();
+					ajax.open('GET',
+						svHost + '/payment/pay/alilife/v2/onceId'
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							let obj = JSON.parse(ajax.responseText);
+							if (obj.code !== 200) {
+								showModal(obj.msg);
+							} else {
+								clientId = obj.data.onceId;
+								localStorage.setItem("clientId", obj.data.onceId);
+								document.getElementById("clientId").innerText = obj.data.onceId;
+							}
+						} else {
+							console.log(ajax.readyState, ajax.status);
+						}
+					}
+				}
+			}
+
+			// 创建订单
+			function createOrder(amount) {
+				return new Promise((resolve, reject) => {
+					let reqBody = {
+						qrCode: qrCode,
+						onceId: clientId,
+						amount: amount,
+						isAliLife: isAliLife
+					};
+					ajax.open('POST',
+						svHost + '/payment/pay/alilife/v2/create'
+					);
+					ajax.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+					ajax.send(JSON.stringify(reqBody));
+					ajax.onreadystatechange = function() {
+						console.log('readyState:', ajax.readyState, 'status:', ajax.status);
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 打点
+			function dotOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('POST',
+						svHost + '/payment/pay/alilife/v2/dot?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 取消订单
+			function cancelOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/alilife/v2/cancel?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						console.log('readyState:', ajax.readyState, 'status:', ajax.status);
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 查询订单
+			function queryOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/alilife/v2/query?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+
+			// 支付业务
+			function paymentBiz(amount) {
+				showTimerModal();
+				startTimer();
+				amountYuan = amount;
+				amountFen = amount * 100;
+				// createDYOrder(amountFen);
+				localStorage.setItem("amount", amount);
+
+				createOrder(amountFen).then(responseText => {
+					console.log('下单结果 >>> ', responseText);
+					let obj = JSON.parse(responseText);
+					if (obj.code != 200) {
+						hideTimerModal();
+						showModal(obj.msg);
+					} else {
+						if (obj.data.state == 'PAYING' && obj.data.payUrl !== undefined && obj.data.payUrl !== null &&
+							obj.data
+							.payUrl !== '') {
+							orderInfo.id = obj.data.orderId;
+							wakeupAliPay(obj.data.orderId, obj.data.payUrl);
+						} else {
+							orderInfo.id = obj.data.orderId;
+							setTimeout(function() {
+								startQueryOrder();
+							}, 200);
+						}
+					}
+				})
+			}
+
+			function startQueryOrder() {
+				setTimeout(function() {
+					queryOrder(orderInfo.id).then(res => {
+						let obj = JSON.parse(res);
+						if (obj.code != 200) {
+							showModal(obj.msg);
+							setTimeout(function() {
+								location.reload();
+							}, 2000);
+						} else {
+							if (obj.data.state === 'SUCCESS') {
+								showModal('支付成功');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'TIMEOUT') {
+								showModal('支付超时');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'FAIL') {
+								showModal('支付异常');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'PAYING') {
+								if (obj.data.payUrl === undefined || obj.data.payUrl === null || obj.data
+									.payUrl === '') {
+									startQueryOrder();
+								} else {
+									wakeupAliPay(obj.data.id, obj.data.payUrl);
+								}
+							} else {
+								startQueryOrder();
+							}
+						}
+					});
+				}, 1500);
+			}
+
+			// 取消订单
+			function cancelOrderBiz() {
+				cancelOrder(orderInfo.id).then(res => {
+					setTimeout(function() {
+						refreshBrowser();
+					}, 1000);
+				});
+			}
+
+			// 倒计时
+			function startTimer() {
+				setTimeout(function() {
+					let tm = timeOutNum - 1;
+					if (tm <= 0) {
+						timeOutNum = 0;
+						document.getElementById('timeOutNum').innerText = 0;
+						// 可以刷新页面，或者显示重新下单
+					} else {
+						timeOutNum = tm;
+						document.getElementById('timeOutNum').innerText = timeOutNum;
+						startTimer();
+					}
+				}, 1000)
+			}
+
+			function wakeupAliPay(oid, payUrl) {
+				hideTimerModal();
+				if (payUrl.indexOf('alipays://') > -1 || payUrl
+					.indexOf('https://') > -1 || payUrl
+					.indexOf('http://') > -1) {
+					// window.open("alipays://platformapi/startapp?appId=20000067&url=" +
+					// 	encodeURIComponent(params), '_blank');
+					// window.open(params, '_blank');
+					// generateQR(params);
+					// location.href = params;
+					// window.open(payUrl, '_blank');
+					location.href = payUrl;
+				} else {
+					window.AlipayJSBridge ? AlipayJSBridge.call("tradePay", {
+						orderStr: payUrl
+					}, function(result) {
+						if (result.resultCode == "9000") {
+							dotOrder(oid).then(res => {
+								setTimeout(function() {
+									refreshBrowser();
+								}, 1000);
+							});
+						} else {
+							cancelOrder(oid).then(res => {
+								setTimeout(function() {
+									refreshBrowser();
+								}, 1000);
+							});
+						}
+					}) : showModal('仅支持支付宝');
+				}
+			}
+
+			function handleClick(event) {
+				if (qrCode === undefined || qrCode === null || qrCode === '') {
+					showModal('缺失qrCode参数');
+					return;
+				}
+
+				event.preventDefault(); // 阻止默认提交行为
+				const input = document.getElementById('numberInput');
+				const rawValue = input.value.trim();
+
+				// 转成浮点再判断是否合法整数
+				const num = parseFloat(rawValue);
+				const intVal = parseInt(rawValue, 10);
+
+				if (
+					!/^\d+$/.test(rawValue) || // 非纯正整数
+					isNaN(num) ||
+					!Number.isInteger(num) || // 输入包含小数点
+					intVal < 1 || intVal > 10000
+				) {
+					showModal('请输入1到10000之间的正整数');
+					input.focus();
+					input.select(); // 选中原内容便于替换
+					return;
+				}
+				paymentBiz(intVal);
+			}
+
+			function refreshBrowser() {
+				if (navigator.userAgent.toLocaleLowerCase().includes("alipay")) {
+					location.href = "alipays://platformapi/startapp?appId=20000067&url=" + encodeURIComponent(location.href);
+				} else {
+					location.reload();
+				}
+			}
+		</script>
+	</body>
+</html>
