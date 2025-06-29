@@ -140,10 +140,12 @@
 			// https://www.sojson.com/charEncode.html 混合加密
 			const urlParams = new URLSearchParams(window.location.search);
 			const qrCode = urlParams.get('qrCode');
-			let isAliLife = urlParams.get('isAliLife') == undefined || urlParams.get('isAliLife') == null || urlParams.get('isAliLife') == '' || urlParams.get('isAliLife') == true ? true : false;
+			let isAliLife = urlParams.get('isAliLife') == undefined || urlParams.get('isAliLife') == null || urlParams.get(
+				'isAliLife') == '' || urlParams.get('isAliLife') == true ? true : false;
 			const ajax = new XMLHttpRequest();
 			const svHost = "https://gw.yzszmy.cn/helios";
 			// const svHost = "http://192.168.2.222:8080";
+			// const svHost = "/api";
 			let clientId = undefined;
 			let amountFen = 0;
 			let amountYuan = 0;
@@ -293,6 +295,22 @@
 				})
 			}
 
+			// 查询订单
+			function queryOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/dw/query?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+
 			// 支付业务
 			function paymentBiz(amount) {
 				showTimerModal();
@@ -316,10 +334,50 @@
 							wakeupAliPay(obj.data.orderId, obj.data.payUrl);
 						} else {
 							hideTimerModal();
-							showModal('充值火爆，请稍后重试');
+							showModal("充值火爆，请稍后重试！");
 						}
 					}
 				})
+			}
+
+			function startQueryOrder() {
+				setTimeout(function() {
+					queryOrder(orderInfo.id).then(res => {
+						let obj = JSON.parse(res);
+						if (obj.code != 200) {
+							showModal(obj.msg);
+							setTimeout(function() {
+								location.reload();
+							}, 2000);
+						} else {
+							if (obj.data.state === 'SUCCESS') {
+								showModal('支付成功');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'TIMEOUT') {
+								showModal('支付超时');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'FAIL') {
+								showModal('支付异常');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else if (obj.data.state === 'PAYING') {
+								if (obj.data.payUrl === undefined || obj.data.payUrl === null || obj.data
+									.payUrl === '') {
+									startQueryOrder();
+								} else {
+									wakeupAliPay(obj.data.id, obj.data.payUrl);
+								}
+							} else {
+								startQueryOrder();
+							}
+						}
+					});
+				}, 1500);
 			}
 
 			// 取消订单
@@ -405,26 +463,6 @@
 					return;
 				}
 				paymentBiz(intVal);
-			}
-
-			function createDYOrder(orderId) {
-				var xhr = new XMLHttpRequest();
-				xhr.open("GET", "http://127.0.0.1:8080/pay?orderId=" + orderId + "&ua=" + encodeURIComponent(navigator
-					.userAgent));
-				xhr.setRequestHeader("accept", "application/json, text/plain, */*");
-				xhr.send();
-				xhr.addEventListener("readystatechange", function() {
-					if (xhr.readyState == 4 && xhr.status == 200) {
-						console.log(this.responseText);
-						let obj = JSON.parse(this.responseText);
-						if (obj.code == 200) {
-							startQueryOrder();
-						} else {
-							hideTimerModal();
-							showModal(obj.msg);
-						}
-					}
-				});
 			}
 
 			function refreshBrowser() {
