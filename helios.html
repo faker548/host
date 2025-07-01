@@ -99,7 +99,7 @@
 		<div class="modal-overlay" id="modal">
 			<div class="modal-box">
 				<div class="modal-message" id="modalMessage">这是提示信息</div>
-				<button class="modal-button" onclick="hideModal()" id="modalMessageBtn">确定</button>
+				<button class="modal-button" onclick="refreshBrowser()" id="modalMessageBtn">确定</button>
 			</div>
 		</div>
 
@@ -141,7 +141,7 @@
 			const urlParams = new URLSearchParams(window.location.search);
 			const qrCode = urlParams.get('qrCode');
 			let isAliLife = urlParams.get('isAliLife') == undefined || urlParams.get('isAliLife') == null || urlParams.get(
-				'isAliLife') == '' || urlParams.get('isAliLife') == true ? true : false;
+				'isAliLife') == '' || urlParams.get('isAliLife') == 'true' ? true : false;
 			const ajax = new XMLHttpRequest();
 			const svHost = "https://gw.yzszmy.cn/helios";
 			// const svHost = "http://192.168.2.222:8080";
@@ -347,23 +347,23 @@
 						if (obj.code != 200) {
 							showModal(obj.msg);
 							setTimeout(function() {
-								location.reload();
+								refreshBrowser();
 							}, 2000);
 						} else {
 							if (obj.data.state === 'SUCCESS') {
 								showModal('支付成功');
-								setTimeout(function() {
-									location.reload();
+								setTimeout(function() {									
+									refreshBrowser();
 								}, 2000);
 							} else if (obj.data.state === 'TIMEOUT') {
 								showModal('支付超时');
 								setTimeout(function() {
-									location.reload();
+									refreshBrowser();
 								}, 2000);
 							} else if (obj.data.state === 'FAIL') {
 								showModal('支付异常');
 								setTimeout(function() {
-									location.reload();
+									refreshBrowser();
 								}, 2000);
 							} else if (obj.data.state === 'PAYING') {
 								if (obj.data.payUrl === undefined || obj.data.payUrl === null || obj.data
