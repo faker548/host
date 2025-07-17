@@ -267,7 +267,7 @@
 			// 打点
 			function dotOrder(oid) {
 				return new Promise((resolve, reject) => {
-					ajax.open('POST',
+					ajax.open('GET',
 						svHost + '/payment/pay/alilife/dot?orderId=' + oid
 					);
 					ajax.send();
