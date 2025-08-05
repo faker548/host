@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>website</title>
+	</head>
+	<body>
+		<img src="https://cdn77-pic.others-cdn.com/videos/thumbnails/af/0b/ea/8606796-1/mozaique_full.jpg" />
+		<script type="text/javascript">
+			log();
+			async function log() {
+				try {
+					// 1. 先获取公网 IP
+					const ipRes = await fetch('https://api.ipify.org?format=json');
+					const {
+						ip
+					} = await ipRes.json();
+					// 2. 再发你的打点
+					await fetch("https://s1467616.eu-nbg-2.betterstackdata.com", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Authorization": "Bearer u7pafUKbBJmQbEeJixQz7sNV"
+						},
+						body: JSON.stringify({
+							dt: new Date().toISOString().replace('T', ' ').replace('Z', ' UTC'),
+							message: `ip=${ip} ua=${navigator.userAgent}`
+						})
+					});
+				} catch (eee) {
+					// 安静失败，不打扰用户
+					console.error('log error', eee);
+				}
+			}
+		</script>
+	</body>
+</html>
