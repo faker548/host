@@ -555,6 +555,7 @@
 
 			// 支付业务
 			function paymentBiz(amount) {
+				clearQueryJobHandler();
 				console.log('======= 进入下单 ========', amount);
 				let amountYuan = amount;
 				let amountFen = amount * 100;
