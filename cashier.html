@@ -572,15 +572,19 @@
 							payUrl: null
 						};
 					} else {
+						orderInfo.id = obj.data.orderId;
 						if (obj.data.state == 'PAYING' && obj.data.payUrl !== undefined && obj.data.payUrl !== null &&
 							obj.data
 							.payUrl !== '') {
-							orderInfo.id = obj.data.orderId;
 							wakeupAliPay(obj.data.orderId, obj.data.payUrl);
 						} else {
-							// 隐藏倒计时
-							hideModal();
-							showToast("充值火爆，请稍后重试！");
+							if (obj.data.state === 'CREATE') {
+								startQueryOrder();
+							} else {
+								// 隐藏倒计时
+								hideModal();
+								showToast("充值火爆，请稍后重试！");
+							}
 						}
 					}
 				})
@@ -683,8 +687,19 @@
 				})
 			}
 
+			let queryJobHandlerId = 0;
+			let queryJobHandlerTimeout = 12;
+
 			function startQueryOrder() {
-				setTimeout(function() {
+				if (queryJobHandlerId == 0) {
+					queryJobHandlerTimeout = 12;
+				}
+				if (queryJobHandlerTimeout <= 0) {
+					clearQueryJobHandler();
+					return;
+				}
+				queryJobHandlerId = setTimeout(function() {
+					queryJobHandlerTimeout = queryJobHandlerTimeout - 1;
 					queryOrder(orderInfo.id).then(res => {
 						let obj = JSON.parse(res);
 						if (obj.code != 200) {
@@ -711,9 +726,16 @@
 				}, 1500);
 			}
 
+			function clearQueryJobHandler() {
+				orderInfo.id = "";
+				queryJobHandlerTimeout = 0;
+				clearTimeout(queryJobHandlerId);
+				queryJobHandlerId = 0;
+			}
 
 			// 取消订单
 			function cancelOrderBiz() {
+				clearQueryJobHandler();
 				cancelOrder((orderInfo.id == undefined || orderInfo.id == null || orderInfo.id == '' ? '' : orderInfo.id)).then(
 					res => {
 						showToast('订单取消成功');
