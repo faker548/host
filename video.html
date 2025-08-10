@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LoveStory - 电影站点</title>
+
+  <!-- 预连接第三方域名；降低首包耗时 -->
+  <link rel="preconnect" href="https://img.hgimg00.com" crossorigin>
+  <link rel="dns-prefetch" href="//img.hgimg00.com">
+  <link rel="preconnect" href="https://player.hgcdn666.com" crossorigin>
+  <link rel="dns-prefetch" href="//player.hgcdn666.com">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root{
+      --bg:#0b0d12; --bg2:#12141b; --top:#101522; --muted:#b9c1d1; --card:#1d2431;
+      --pill:#2b3446; --pill-active:#ff2d7a; --accent:#ff2d7a; --accent2:#ffd369;
+      --danger:#e94560;
+    }
+    body { font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial; background: linear-gradient(#0f1320,#0a0d16); color:#fff; }
+
+    /* 顶部条 */
+    .topbar{position:sticky;top:0;z-index:20;background:var(--top);padding:10px 12px;border-bottom:1px solid #111827;}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;color:#ff6b81;}
+    .searchbar{display:flex;gap:8px}
+    .searchbar input{flex:1;height:36px;border-radius:8px;border:none;padding:0 12px;background:#0f1524;color:#e5e7eb;outline:none}
+    .searchbar button{height:36px;border:none;border-radius:8px;padding:0 12px;background:var(--accent);color:#fff;cursor:pointer}
+    .tabs{display:flex;gap:10px;overflow-x:auto;padding:10px 0 4px}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{white-space:nowrap;padding:6px 12px;border-radius:16px;background:var(--pill);cursor:pointer}
+    .tab.active{background:var(--pill-active)}
+
+    /* 状态条 */
+    #statusBar{display:flex;align-items:center;gap:8px;color:#e5e7eb;font-size:13px;padding:6px 2px}
+    #statusBar .sp{width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+    #statusBar button{border:none;background:var(--accent2);color:#000;border-radius:6px;padding:4px 8px;cursor:pointer}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    main{padding:12px}
+    /* 分区标题（子类分区） */
+    .section-header{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px}
+    .section-title{font-weight:700}
+    .more{font-size:13px;color:#d1d5db;cursor:pointer}
+    /* 网格：列表模式 2列，分区卡片 2列（和截图一致） */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+
+    /* 卡片 */
+    .card{background:var(--card);border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid #182034}
+    .thumb-wrap{position:relative;width:100%;height:110px;background:#0e1627}
+    .thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:blur(12px);transition:filter .3s ease}
+    .thumb.loaded{filter:blur(0)}
+    .badge-corner{
+      position:absolute;left:8px;top:8px;font-size:11px;padding:2px 6px;border-radius:999px;background:#ff2d7a;color:#fff
+    }
+    .meta-bar{position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:10px;align-items:center;
+      background:rgba(0,0,0,.35);border-radius:8px;padding:2px 6px;font-size:12px}
+    .meta{display:flex;align-items:center;gap:10px;color:#e5e7eb}
+    .info{padding:8px 10px}
+    .title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f3f4f6}
+
+    /* 分页 */
+    .pagination{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0}
+    .pagination button,.pagination span{background:#293147;border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}
+    .pagination .active{background:var(--accent2);color:#000}
+    .pagination .ellipsis{background:transparent;cursor:default}
+
+    .empty{color:#9ca3af;text-align:center;padding:24px 0}
+
+    footer{padding:20px;text-align:center;background:#0f1524;color:#cbd5e1}
+
+    /* 弹层/播放器/Toast */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center;padding:14px}
+    .modal,.player{background:#fff;color:#000;border-radius:16px;width:92%;max-width:520px;position:relative;padding:16px}
+    .close{position:absolute;right:10px;top:10px;border:none;border-radius:50%;width:28px;height:28px;line-height:28px;background:var(--danger);color:#fff;font-size:18px;cursor:pointer}
+    .price-btn{display:block;width:82%;margin:10px auto;padding:10px;border:none;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}
+    .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;border-radius:8px;padding:10px 16px;display:none;z-index:60}
+    video{width:100%;border-radius:12px;background:#000}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">∞∞ 爱 LoveStory</div>
+    </div>
+    <div class="searchbar">
+      <input id="searchInput" type="search" placeholder="请输入搜索内容" />
+      <button id="searchBtn">搜索</button>
+    </div>
+    <div class="tabs" id="parentTabs"></div>
+    <div id="statusBar"><span class="sp"></span><span id="statusText">正在加载分类…</span><button id="retryBtn" style="display:none">重试</button></div>
+  </div>
+
+  <main>
+    <!-- 首页：子类分区容器 -->
+    <div id="homeWrap"></div>
+
+    <!-- 列表模式（某个子类） -->
+    <div id="listWrap" style="display:none">
+      <div class="section-header"><div class="section-title" id="listTitle">列表</div></div>
+      <div id="listGrid" class="grid"></div>
+      <div id="pagination" class="pagination"></div>
+    </div>
+
+    <!-- 搜索模式 -->
+    <div id="searchWrap" style="display:none">
+      <div class="section-header"><div class="section-title">搜索结果</div></div>
+      <div id="searchGrid" class="grid"></div>
+      <div id="searchPagination" class="pagination"></div>
+    </div>
+  </main>
+
+  <footer>ICP备案号：京ICP备12345678号-1</footer>
+
+  <!-- 付费弹层 -->
+  <div id="payOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <button class="close" onclick="closePay()">×</button>
+      <h3 style="text-align:center;margin-bottom:8px">观看此视频需付费</h3>
+      <button class="price-btn" onclick="selectPlan('3元单片')">单部观看：3元</button>
+      <button class="price-btn" onclick="selectPlan('10元一小时会员')">会员1小时：10元</button>
+      <button class="price-btn" onclick="selectPlan('29.9元永久会员')">永久会员：29.9元</button>
+    </div>
+  </div>
+
+  <!-- 播放器 -->
+  <div id="playerOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="player">
+      <button class="close" onclick="closePlayer()">×</button>
+      <video id="videoPlayer" controls playsinline></video>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    document.addEventListener('dblclick', e => e.preventDefault());
+
+    // refs
+    const parentTabs = document.getElementById('parentTabs');
+    const statusBar = document.getElementById('statusBar');
+    const statusText = document.getElementById('statusText');
+    const retryBtn   = document.getElementById('retryBtn');
+
+    const homeWrap   = document.getElementById('homeWrap');
+    const listWrap   = document.getElementById('listWrap');
+    const listTitle  = document.getElementById('listTitle');
+    const listGrid   = document.getElementById('listGrid');
+    const pagination = document.getElementById('pagination');
+
+    const searchWrap = document.getElementById('searchWrap');
+    const searchGrid = document.getElementById('searchGrid');
+    const searchPagination = document.getElementById('searchPagination');
+
+    const payOverlay = document.getElementById('payOverlay');
+    const playerOverlay = document.getElementById('playerOverlay');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const toastEl = document.getElementById('toast');
+
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn   = document.getElementById('searchBtn');
+
+    // state
+    let categories = [];
+    let parentIdx = 0;
+    let childId   = null;
+    let selectedVideoUrl = '';
+    let planLock = false;
+
+    // list/search pagination
+    let currentPage = 1;
+    const perPage   = 20;
+    let lastPage    = 1;
+
+    // helpers
+    function showToast(msg, ms=2000){
+      toastEl.textContent = msg;
+      toastEl.style.display = 'block';
+      setTimeout(()=>toastEl.style.display='none', ms);
+    }
+    function setStatus(text, spinning=true, retry=false){
+      statusText.textContent = text || '';
+      statusBar.querySelector('.sp').style.display = spinning ? 'inline-block' : 'none';
+      retryBtn.style.display = retry ? 'inline-block' : 'none';
+      statusBar.style.display = text ? 'flex' : 'none';
+    }
+    retryBtn.onclick = ()=> init(true);
+
+    function escapeHtml(s=''){ return String(s).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    // fetch with timeout
+    async function fetchWithTimeout(url, {timeout=6000, ...opts}={}){
+      const ctl = new AbortController();
+      const id = setTimeout(()=>ctl.abort(), timeout);
+      try{ return await fetch(url, {...opts, signal: ctl.signal}); }
+      finally{ clearTimeout(id); }
+    }
+
+    const API = {
+      async categories(){
+        const url = 'https://api.4love4.com/api/video_categories';
+        const r = await fetchWithTimeout(url, {timeout: 8000});
+        if(!r.ok) throw new Error('分类请求失败 '+r.status);
+        const j = await r.json(); return j.data||[];
+      },
+      async videos(page, per_page, cid){
+        const u = new URL('https://api.4love4.com/api/videos');
+        u.searchParams.set('page', page);
+        u.searchParams.set('per_page', per_page);
+        if(cid) u.searchParams.set('category_id', cid);
+        const r = await fetchWithTimeout(u.toString(), {timeout: 8000});
+        if(!r.ok) throw new Error('视频请求失败 '+r.status);
+        return await r.json();
+      },
+      async search(page, per_page, keyword){
+        const u = new URL('https://api.4love4.com/api/search');
+        u.searchParams.set('page', page);
+        u.searchParams.set('per_page', per_page);
+        u.searchParams.set('keyword', keyword || '');
+        const r = await fetchWithTimeout(u.toString(), {timeout: 8000});
+        if(!r.ok) throw new Error('搜索请求失败 '+r.status);
+        return await r.json();
+      }
+    };
+
+    // tabs
+    function renderParentTabs(){
+      parentTabs.innerHTML = '';
+      categories.forEach((p, i)=>{
+        const el = document.createElement('div');
+        el.className = 'tab' + (i===parentIdx?' active':'');
+        el.textContent = p.name;
+        el.onclick = ()=>{
+          parentIdx = i;
+          switchToHome();
+        };
+        parentTabs.appendChild(el);
+      });
+    }
+
+    // —— 首页：按父分类渲染所有子类分区，每个子类取前4条 ——
+    async function renderHomeSections(){
+      homeWrap.innerHTML = '';
+      const parent = categories[parentIdx];
+      if(!parent){ return; }
+      const children = parent.children || [];
+      if(!children.length){
+        homeWrap.innerHTML = '<div class="empty">该分类下暂无子类</div>';
+        return;
+      }
+      // 分区逐个拉数据（可按需并发/限制并发）
+      for(const ch of children){
+        const sec = document.createElement('section');
+
+        const header = document.createElement('div');
+        header.className = 'section-header';
+        header.innerHTML = `<div class="section-title">${escapeHtml(ch.name)}</div><div class="more">更多</div>`;
+        header.querySelector('.more').onclick = ()=> switchToList(ch.id, ch.name);
+        sec.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        // skeleton
+        for(let i=0;i<4;i++){
+          const sk = document.createElement('div');
+          sk.className = 'card';
+          sk.innerHTML = `<div class="thumb-wrap"></div><div class="info"><div class="title">加载中…</div></div>`;
+          grid.appendChild(sk);
+        }
+        sec.appendChild(grid);
+        homeWrap.appendChild(sec);
+
+        try{
+          const res = await API.videos(1, 4, ch.id);
+          const list = res?.data || [];
+          grid.innerHTML = '';
+          list.forEach(item=> grid.appendChild(makeCard(item)));
+        }catch(e){
+          console.warn('子类加载失败', ch.id, e);
+          grid.innerHTML = `<div class="empty" style="grid-column:1/-1">加载失败</div>`;
+        }
+      }
+    }
+
+    // —— 列表模式（某子类），带分页 ——
+    async function renderList(){
+      listGrid.innerHTML = '';
+      for(let i=0;i<perPage;i++){
+        const sk = document.createElement('div');
+        sk.className = 'card'; sk.innerHTML = `<div class="thumb-wrap"></div><div class="info"><div class="title">加载中…</div></div>`;
+        listGrid.appendChild(sk);
+      }
+      try{
+        setStatus('正在加载视频…', true, false);
+        const res = await API.videos(currentPage, perPage, childId);
+        const list = res?.data||[];
+        const meta = res?.meta;
+        currentPage = Number(meta?.current_page||1);
+        lastPage    = Number(meta?.last_page||1);
+        listGrid.innerHTML = '';
+        if(!list.length){ listGrid.innerHTML = '<div class="empty" style="grid-column:1/-1">暂无内容</div>'; }
+        else list.forEach(v=> listGrid.appendChild(makeCard(v)));
+        renderPagination(pagination, currentPage, lastPage, (p)=>{ currentPage=p; renderList(); });
+        setStatus('', false, false);
+      }catch(e){
+        console.error(e);
+        setStatus('加载视频失败', false, true);
+        listGrid.innerHTML = '<div class="empty" style="grid-column:1/-1">加载失败 <button onclick="renderList()">重试</button></div>';
+      }
+    }
+
+    // —— 搜索模式 ——
+    async function renderSearch(keyword){
+      searchGrid.innerHTML = '';
+      for(let i=0;i<perPage;i++){
+        const sk = document.createElement('div');
+        sk.className = 'card'; sk.innerHTML = `<div class="thumb-wrap"></div><div class="info"><div class="title">加载中…</div></div>`;
+        searchGrid.appendChild(sk);
+      }
+      try{
+        setStatus(`正在搜索：${keyword}`, true, false);
+        const res = await API.search(currentPage, perPage, keyword);
+        const list = res?.data || [];
+        const meta = res?.meta;
+        currentPage = Number(meta?.current_page||1);
+        lastPage    = Number(meta?.last_page||1);
+        searchGrid.innerHTML = '';
+        if(!list.length){ searchGrid.innerHTML = '<div class="empty" style="grid-column:1/-1">无匹配结果</div>'; }
+        else list.forEach(v=> searchGrid.appendChild(makeCard({ ...v, category_name:'搜索' })));
+        renderPagination(searchPagination, currentPage, lastPage, (p)=>{ currentPage=p; renderSearch(keyword); });
+        setStatus('', false, false);
+      }catch(e){
+        console.error(e);
+        setStatus('搜索失败', false, true);
+        searchGrid.innerHTML = '<div class="empty" style="grid-column:1/-1">搜索失败 <button onclick="doSearch()">重试</button></div>';
+      }
+    }
+
+    // —— 卡片组件（统一 2 列，img 高 110px） ——
+    function makeCard(item){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const low = item.cover_thumb || item.cover || './img/cover.png';
+      const high = item.cover || item.cover_thumb || './img/cover.png';
+      const duration = item.video_duration || '--:--';
+      const views = item.views_label ?? item.views ?? 0;
+      const likes = item.likes_label ?? item.likes ?? 0;
+
+      card.innerHTML = `
+        <div class="thumb-wrap">
+          <img class="thumb" src="${low}" data-full="${high}" loading="lazy" decoding="async" alt="${escapeHtml(item.title)}">
+          <div class="badge-corner">限免</div>
+          <div class="meta-bar">
+            <div class="meta">
+              <span>👁️ ${views}</span>
+              <span>👍 ${likes}</span>
+              <span>⏱ ${duration}</span>
+            </div>
+          </div>
+        </div>
+        <div class="info">
+          <div class="title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+        </div>
+      `;
+
+      const img = card.querySelector('img');
+      // 渐进式切高清
+      const io = new IntersectionObserver(es=>{
+        es.forEach(en=>{
+          if(en.isIntersecting){
+            const full = img.getAttribute('data-full');
+            if(full){ img.src = full; }
+            io.unobserve(img);
+          }
+        });
+      },{rootMargin:'200px 0px', threshold:0.01});
+      img.addEventListener('load', ()=> img.classList.add('loaded'), {once:true});
+      img.addEventListener('error', ()=>{ img.src='./img/cover.png'; img.classList.add('loaded'); }, {once:true});
+      io.observe(img);
+
+      card.onclick = ()=>{
+        // 这里：需要播放地址时，接口返回字段为 video；搜索接口无 video 字段，这里仅做示范使用 cover 代替
+        selectedVideoUrl = item.video || item.play || ''; // 若无则空
+        openPay();
+      };
+      return card;
+    }
+
+    // —— 分页（省略号折叠） ——
+    function renderPagination(container, cur, total, onGo){
+      container.innerHTML='';
+      const add=(label,page,active=false,disabled=false)=>{
+        const b=document.createElement('button');
+        b.textContent=label;
+        if(active)b.classList.add('active');
+        if(disabled){b.disabled=true;b.style.opacity=.5}
+        b.onclick=()=>{ if(!disabled && page && page!==cur) onGo(page); };
+        container.appendChild(b);
+      };
+      const el=()=>{ const s=document.createElement('span');s.className='ellipsis';s.textContent='...';container.appendChild(s); };
+      add('上一页', Math.max(1,cur-1), false, cur===1);
+      if(total<=7){ for(let p=1;p<=total;p++) add(String(p), p, p===cur); }
+      else if(cur<=4){ [1,2,3,4,5].forEach(p=>add(String(p),p,p===cur)); el(); add(String(total), total, cur===total); }
+      else if(cur>=total-3){ add('1',1,cur===1); el(); [total-4,total-3,total-2,total-1,total].forEach(p=>add(String(p),p,p===cur)); }
+      else{ add('1',1,cur===1); el(); [cur-1,cur,cur+1].forEach(p=>add(String(p),p,p===cur)); el(); add(String(total), total, cur===total); }
+      add('下一页', Math.min(total,cur+1), false, cur===total);
+    }
+
+    // —— 模式切换 ——
+    function switchToHome(){
+      homeWrap.style.display='block';
+      listWrap.style.display='none';
+      searchWrap.style.display='none';
+      renderParentTabs();
+      setStatus('加载分区中…', true, false);
+      renderHomeSections().then(()=> setStatus('', false, false));
+    }
+    function switchToList(cid, title){
+      childId = cid; currentPage = 1;
+      listTitle.textContent = title || '列表';
+      homeWrap.style.display='none';
+      listWrap.style.display='block';
+      searchWrap.style.display='none';
+      renderList();
+    }
+    function switchToSearch(){
+      const kw = (searchInput.value||'').trim();
+      if(!kw){ showToast('请输入关键词'); return; }
+      currentPage=1;
+      homeWrap.style.display='none';
+      listWrap.style.display='none';
+      searchWrap.style.display='block';
+      renderSearch(kw);
+    }
+
+    searchBtn.onclick = ()=> switchToSearch();
+    searchInput.addEventListener('keydown', e=>{ if(e.key==='Enter') switchToSearch(); });
+
+    // —— 付费 / 播放 —— 
+    function openPay(){ payOverlay.style.display='flex'; }
+    function closePay(){ payOverlay.style.display='none'; }
+    function selectPlan(plan){
+      if(planLock) return; planLock = true;
+      closePay(); showToast(`你选择了：${plan}`);
+      setTimeout(()=>{
+        if(!selectedVideoUrl){
+          showToast('该条目暂无可播放地址（示例）');
+        }else{
+          videoPlayer.src = selectedVideoUrl;
+          playerOverlay.style.display='flex';
+          videoPlayer.play?.().catch(()=>{});
+        }
+        planLock = false;
+      }, 3000);
+    }
+    function closePlayer(){ playerOverlay.style.display='none'; videoPlayer.pause?.(); videoPlayer.currentTime=0; videoPlayer.src=''; }
+
+    // —— 初始化 —— 
+    async function init(forceRetry=false){
+      try{
+        setStatus('正在加载分类…', true, false);
+        categories = await API.categories();
+        if(!Array.isArray(categories) || !categories.length) throw new Error('无分类数据');
+        setStatus('', false, false);
+        parentIdx = 0;
+        switchToHome();
+      }catch(e){
+        console.error(e);
+        setStatus('加载分类失败', false, true);
+        if(forceRetry) showToast('加载分类失败');
+      }
+    }
+    init();
+
+    // 可选：图片 SW 缓存（二次访问更快）
+    if('serviceWorker' in navigator){
+      try{
+        const code = `self.addEventListener('install',e=>self.skipWaiting());
+        self.addEventListener('activate',e=>clients.claim());
+        self.addEventListener('fetch',e=>{
+          const r=e.request; if(r.destination==='image'){
+            e.respondWith((async()=>{
+              const c=await caches.open('img-cache-v1'); const m=await c.match(r);
+              const f=fetch(r).then(res=>{c.put(r,res.clone());return res}).catch(()=>m);
+              return m||f;
+            })());
+          }
+        });`;
+        const blob=new Blob([code],{type:'text/javascript'}); const url=URL.createObjectURL(blob);
+        navigator.serviceWorker.register(url);
+      }catch(e){ console.warn('SW register failed', e); }
+    }
+  </script>
+</body>
+</html>
