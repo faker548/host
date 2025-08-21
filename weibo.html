@@ -409,6 +409,12 @@
 			const modal = document.getElementById("modal");
 			const cancelModal = document.getElementById("cancelModal");
 			const countdown = modal.querySelector(".countdown");
+			
+			// 金额输入
+			const box = document.getElementById('amtBox')
+			const ph = document.getElementById('ph')
+			// caret = document.getElementById('caret');
+			let value = "";
 
 			// 函数
 			window.onload = function() {
@@ -423,13 +429,11 @@
 					}, false);
 				});
 				getClientId();
-				let amt = localStorage.getItem("amount");
-				if (amt) {
-					selectedAmount = parseInt(amt);
-					inputBuffer = amt;
-					customAmountInput.value = amt;
-					updateConfirmButton();
-				}
+				// let amt = localStorage.getItem("amount");
+				// if (amt) {
+				// 	selectedAmount = parseInt(amt);
+				// 	inputBuffer = amt;
+				// }
 			};
 
 			// 禁止双击/手势放大
@@ -441,22 +445,18 @@
 				if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) e.preventDefault();
 			});
 
-			// 金额输入
-			const box = document.getElementById('amtBox'),
-				ph = document.getElementById('ph'),
-				caret = document.getElementById('caret');
-			let value = "";
+			
 
 			function render() {
 				box.innerHTML = '';
 				if (!value) {
 					ph.style.display = 'inline';
 					box.appendChild(ph);
-					box.appendChild(caret);
+					// box.appendChild(caret);
 				} else {
 					ph.style.display = 'none';
 					box.textContent = value;
-					box.appendChild(caret);
+					// box.appendChild(caret);
 				}
 			}
 
