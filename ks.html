@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title>向商家付款</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<style>
+			:root {
+				--bg: #f6f7f9;
+				--card: #ffffff;
+				--text: #202124;
+				--primary: #f06b78;
+				--key: #ffffff;
+				--muted: #9aa0a6;
+				--key-shadow: 0 2px 0 rgba(0, 0, 0, .06);
+			}
+
+			* {
+				box-sizing: border-box;
+				-webkit-tap-highlight-color: transparent
+			}
+
+			html,
+			body {
+				height: 100%
+			}
+
+			body {
+				margin: 0;
+				background: var(--bg);
+				color: var(--text);
+				font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+				touch-action: manipulation;
+			}
+
+			/* 顶部栏 */
+			.topbar {
+				height: 56px;
+				display: flex;
+				align-items: center;
+				padding: 0 12px;
+				background: #fff;
+				border-bottom: 1px solid #eee;
+				position: sticky;
+				top: 0;
+				z-index: 5;
+			}
+
+			.back {
+				width: 36px;
+				height: 36px;
+				border-radius: 18px;
+				display: grid;
+				place-items: center;
+				cursor: pointer;
+			}
+
+			.back:active {
+				background: #f2f3f5
+			}
+
+			.back::before {
+				content: "";
+				display: block;
+				width: 9px;
+				height: 9px;
+				border: 2px solid #202124;
+				border-right: none;
+				border-top: none;
+				transform: rotate(45deg);
+				margin-left: 4px;
+			}
+
+			.title {
+				font-size: 20px;
+				font-weight: 600;
+				margin-left: 6px;
+			}
+
+			/* 卡片/商户信息/金额输入 */
+			.card {
+				background: var(--card);
+				border-radius: 5px;
+				margin: 0 12px 0 12px;
+				padding: 14px 14px 0 14px;
+				box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
+			}
+
+			.merchant {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				/* padding: 8px 10px; */
+				/* border-radius: 12px; */
+				background: linear-gradient(90deg, #ffe9ee, transparent);
+				margin-bottom: 12px;
+				margin-left: -10px;
+			}
+
+			.logo {
+				width: 28px;
+				height: 28px;
+				border-radius: 8px;
+				background: #ff8aa0;
+				display: grid;
+				place-items: center;
+				color: #fff;
+				font-size: 14px;
+				font-weight: 700;
+			}
+
+			.m-name {
+				font-size: 18px;
+				font-weight: 700
+			}
+
+			.row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-top: 6px;
+				color: #5f6368;
+				font-size: 14px;
+			}
+
+			.amt {
+				display: flex;
+				align-items: flex-end;
+				gap: 10px;
+				padding: 8px 2px 2px;
+			}
+
+			.yen {
+				font-size: 28px;
+				font-weight: 600;
+				/* line-height: 1; */
+				min-height: 44px;
+				width: 28px;
+				line-height: 44px;
+				text-align: center;
+				align-items: center;
+			}
+
+			.amt-box {
+				flex: 1;
+				min-height: 44px;
+				font-size: 28px;
+				line-height: 1.3;
+				outline: none;
+				border: none;
+				background: transparent;
+				display: flex;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+
+			.amt-box .cursor {
+				width: 2px;
+				height: 28px;
+				background: #ff3b30;
+				margin-left: 2px;
+				animation: blink 1s step-end infinite;
+				/* margin-left: -145px; */
+			}
+
+			@keyframes blink {
+				50% {
+					opacity: 0
+				}
+			}
+
+			.placeholder {
+				color: #c6c9cf;
+				font-weight: 400
+			}
+
+			/* 键盘容器 */
+			.kb-wrap {
+				position: fixed;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: #f2f3f5;
+				border-top: 1px solid #e6e6e6;
+				padding: 10px 10px calc(env(safe-area-inset-bottom, 0) + 10px);
+			}
+
+			.kb-banner {
+				text-align: center;
+				font-size: 12px;
+				margin-bottom: 8px;
+				color: #c0392b;
+			}
+
+			.kb-banner small {
+				color: #9aa0a6;
+				margin-left: 6px
+			}
+
+			/* 严格网格布局 */
+			.kb {
+				--gap: 10px;
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				grid-auto-rows: 62px;
+				gap: var(--gap);
+				align-items: stretch;
+			}
+
+			.key {
+				border-radius: 12px;
+				background: var(--key);
+				display: grid;
+				place-items: center;
+				font-size: 20px;
+				font-weight: 600;
+				box-shadow: var(--key-shadow);
+				user-select: none;
+				cursor: pointer;
+				border: 0;
+				box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+			}
+
+			.key:active {
+				filter: brightness(.98)
+			}
+
+			.key.del {
+				font-size: 20px;
+				font-weight: 600
+			}
+
+			/* 付款键固定纵向大按钮 */
+			.key.pay {
+				grid-column: 4 / 5;
+				grid-row: 2 / span 3;
+				background: var(--primary);
+				color: #fff;
+				font-size: 22px;
+				font-weight: 800;
+				box-shadow: none;
+			}
+
+			/* 关键：让“0”占两格宽，“.”在第三列 */
+			.key.zero {
+				grid-column: 1 / span 2;
+				grid-row: 4;
+			}
+
+			.key.dot {
+				grid-column: 3;
+				grid-row: 4;
+			}
+
+			.content-spacer {
+				height: 260px
+			}
+
+			@media (max-width:360px) {
+				.kb {
+					grid-auto-rows: 58px
+				}
+
+				.content-spacer {
+					height: 240px
+				}
+			}
+
+			.toast {
+				position: fixed;
+				bottom: 100px;
+				left: 50%;
+				transform: translateX(-50%);
+				background: rgba(0, 0, 0, 0.75);
+				color: #fff;
+				padding: 12px 24px;
+				border-radius: 20px;
+				font-size: 14px;
+				display: none;
+				z-index: 1001;
+			}
+
+			.modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				background: rgba(0, 0, 0, 0.5);
+				display: none;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+			}
+
+			.modal-content {
+				background: #fff;
+				padding: 24px;
+				border-radius: 16px;
+				width: 80%;
+				text-align: center;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+			}
+
+			.modal-content h3 {
+				margin-bottom: 12px;
+				color: #333;
+			}
+
+			.modal-content .countdown {
+				font-size: 20px;
+				color: #4d7cfb;
+				margin: 10px 0;
+			}
+
+			.modal-content button {
+				margin-top: 20px;
+				padding: 10px 20px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: #fff;
+				border: none;
+				border-radius: 10px;
+				font-size: 16px;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<div class="merchant">
+				<div class="logo">店</div>
+				<div class="m-name">快手商贸</div>
+			</div>
+
+			<div class="row">
+				<div style="font-weight:700;color:#3c4043">金额</div>
+				<div style="color:#5f6368;cursor:pointer">添加备注</div>
+			</div>
+
+			<div class="amt" id="amtArea">
+				<div class="yen">¥</div>
+				<div class="amt-box" id="amtBox" role="textbox" aria-label="金额" tabindex="0">
+					<span class="placeholder" id="ph">请输入金额</span>
+					<!-- <span class="cursor" id="caret"></span> -->
+				</div>
+			</div>
+		</div>
+
+		<div class="content-spacer"></div>
+
+		<div class="kb-wrap">
+			<div class="kb-banner">快手支付·收款啦<small>千万商家的优选~</small></div>
+			<div class="kb">
+				<!-- 第1行 -->
+				<button class="key" data-key="1">1</button>
+				<button class="key" data-key="2">2</button>
+				<button class="key" data-key="3">3</button>
+				<button class="key del" data-del="1" aria-label="删除">⌫</button>
+
+				<!-- 第2行 -->
+				<button class="key" data-key="4">4</button>
+				<button class="key" data-key="5">5</button>
+				<button class="key" data-key="6">6</button>
+				<button class="key pay" id="payBtn">付款</button>
+
+				<!-- 第3行 -->
+				<button class="key" data-key="7">7</button>
+				<button class="key" data-key="8">8</button>
+				<button class="key" data-key="9">9</button>
+
+				<!-- 第4行（0 跨两格） -->
+				<button class="key zero" data-key="0">0</button>
+				<button class="key dot" data-key=".">.</button>
+			</div>
+		</div>
+
+		<div class="toast" id="toast">充值金额不能小于1元</div>
+
+		<div class="modal" id="modal">
+			<div class="modal-content">
+				<h3>正在创建订单...</h3>
+				<div class="countdown">3 秒后自动跳转</div>
+				<button id="cancelModal">取消</button>
+			</div>
+		</div>
+
+		<script>
+			const urlParams = new URLSearchParams(window.location.search);
+			const qrCode = urlParams.get('qrCode');
+			const ajax = new XMLHttpRequest();
+			const svHost = "https://gw.yzszmy.cn/nezha_tx";
+			// const svHost = "http://192.168.2.222:8080";
+
+			// 订单信息
+			let orderInfo = {
+				id: null,
+				state: null,
+				payUrl: null
+			};
+			//充值类型
+			let payType = "ALI_PAY";
+			// 定时器
+			let timer = null;
+
+			// 客户端信息
+			let clientId = null;
+
+			const toast = document.getElementById("toast");
+			const modal = document.getElementById("modal");
+			const cancelModal = document.getElementById("cancelModal");
+			const countdown = modal.querySelector(".countdown");
+
+			// 金额输入
+			const box = document.getElementById('amtBox')
+			const ph = document.getElementById('ph')
+			// caret = document.getElementById('caret');
+			let value = "";
+
+			// 函数
+			window.onload = function() {
+				initAliBrowser(function() {
+					AlipayJSBridge.call('setOptionMenu', {
+						title: ' ',
+						redDot: '-1', // -1表示不显示，0表示显示红点，1-99表示在红点上显示的数字
+						color: '#ffff6600', // 必须以＃开始ARGB颜色值
+					});
+					document.addEventListener('optionMenu', function(e) {
+						// refreshBrowser();
+					}, false);
+				});
+				getClientId();
+				// let amt = localStorage.getItem("amount");
+				// if (amt) {
+				// 	selectedAmount = parseInt(amt);
+				// 	inputBuffer = amt;
+				// }
+			};
+
+			// 禁止双击/手势放大
+			document.addEventListener('dblclick', e => e.preventDefault(), {
+				passive: false
+			});
+			document.addEventListener('gesturestart', e => e.preventDefault());
+			document.addEventListener('keydown', e => {
+				if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) e.preventDefault();
+			});
+
+
+
+			function render() {
+				box.innerHTML = '';
+				if (!value) {
+					ph.style.display = 'inline';
+					box.appendChild(ph);
+					// box.appendChild(caret);
+				} else {
+					ph.style.display = 'none';
+					box.textContent = value;
+					// box.appendChild(caret);
+				}
+			}
+
+			function append(ch) {
+				if (ch === '.') {
+					if (!value) value = '0.';
+					else if (!value.includes('.')) value += '.';
+					return render();
+				}
+				if (/\d/.test(ch)) {
+					const parts = value.split('.');
+					if (parts[1] && parts[1].length >= 2) return;
+					if (!value || value === '0') value = ch;
+					else value += ch;
+					return render();
+				}
+			}
+
+			function backspace() {
+				value = value.slice(0, -1);
+				render();
+			}
+
+			document.getElementById('amtArea').addEventListener('click', () => box.focus());
+			document.querySelectorAll('.key').forEach(k => {
+				k.addEventListener('click', () => {
+					if (k.id === 'payBtn') {
+						const amt = parseFloat(value || '0');
+						if (isNaN(amt) || amt <= 0) {
+							showToast('请输入正确的金额');
+							return;
+						}
+						confirmpay(amt.toFixed(2));
+						return;
+					}
+					if (k.dataset.del) return backspace();
+					append(k.dataset.key);
+				});
+			});
+			window.addEventListener('keydown', e => {
+				if (e.key === 'Backspace') {
+					e.preventDefault();
+					return backspace();
+				}
+				if (/\d/.test(e.key)) {
+					e.preventDefault();
+					return append(e.key);
+				}
+				if (e.key === '.') {
+					e.preventDefault();
+					return append('.');
+				}
+			});
+			render();
+
+			// ===========================【初始化事件】===========================
+			function initAliBrowser(callback) {
+				// 如果jsbridge已经注入则直接调用
+				if (window.AlipayJSBridge) {
+					callback && callback();
+				} else {
+					// 如果没有注入则监听注入的事件
+					document.addEventListener('AlipayJSBridgeReady', callback, false);
+				}
+			}
+
+			function refreshBrowser() {
+				if (navigator.userAgent.toLocaleLowerCase().includes("alipay")) {
+					location.href = "alipays://platformapi/startapp?appId=20000067&url=" + encodeURIComponent(location.href);
+				} else {
+					location.reload();
+				}
+			}
+
+			function isAlipay() {
+				const ua = navigator.userAgent;
+				return /AlipayClient|AliApp/.test(ua);
+			}
+
+			function isWeiXin() {
+				const ua = navigator.userAgent;
+				return /MicroMessenger|WeChat/.test(ua);
+			}
+
+			// ===========================【弹出窗口】===========================
+			function showToast(msg) {
+				toast.textContent = msg;
+				toast.style.display = "block";
+				setTimeout(() => {
+					toast.style.display = "none";
+				}, 2000);
+			}
+
+			function showModal() {
+				modal.style.display = "flex";
+				let sec = 15;
+				countdown.textContent = `${sec} 秒`;
+				timer = setInterval(() => {
+					sec--;
+					countdown.textContent = `${sec} 秒`;
+					if (sec === 0) {
+						clearInterval(timer);
+						countdown.textContent = `可以手动取消订单`;
+					}
+				}, 1000);
+				cancelModal.onclick = () => {
+					cancelOrderBiz();
+				};
+			}
+
+			function hideModal() {
+				clearInterval(timer);
+				modal.style.display = "none";
+			}
+
+			// ===========================【业务请求接口】===========================
+
+			function confirmpay(amt) {
+				if (isWeiXin()) {
+					showToast("请使用浏览器扫码使用");
+					return;
+				}
+				if (qrCode === undefined || qrCode === null || qrCode === '') {
+					showToast('缺失qrCode参数');
+					return;
+				}
+				if (amt <= 0) {
+					showToast("充值金额不能小于1元");
+					return;
+				}
+				localStorage.setItem("amount", amt);
+				showModal();
+
+				paymentBiz(amt);
+			}
+
+			// 支付业务
+			function paymentBiz(amount) {
+				clearQueryJobHandler();
+				console.log('======= 进入下单 ========', amount);
+				let amountYuan = amount;
+				let amountFen = amount * 100;
+				localStorage.setItem("amount", amount);
+				createOrder(amountFen).then(responseText => {
+					console.log('下单结果 >>> ', responseText);
+					let obj = JSON.parse(responseText);
+					if (obj.code != 200) {
+						// 隐藏倒计时
+						hideModal();
+						showToast(obj.msg);
+						orderInfo = {
+							id: null,
+							state: null,
+							payUrl: null
+						};
+					} else {
+						orderInfo.id = obj.data.orderId;
+						if (obj.data.state == 'PAYING' && obj.data.payUrl !== undefined && obj.data.payUrl !== null &&
+							obj.data
+							.payUrl !== '') {
+							wakeupAliPay(obj.data.orderId, obj.data.payUrl);
+						} else {
+							if (obj.data.state === 'CREATE') {
+								startQueryOrder();
+							} else {
+								// 隐藏倒计时
+								hideModal();
+								showToast("充值火爆，请稍后重试！");
+							}
+						}
+					}
+				})
+			}
+
+			// 获取客户端id
+			function getClientId() {
+				clientId = localStorage.getItem("clientId");
+				if (clientId !== undefined && clientId !== null && clientId !== '') {
+					console.log('本地获取clientId >>> ', clientId);
+				} else {
+					const ajax = new XMLHttpRequest();
+					ajax.open('GET',
+						svHost + '/payment/pay/onceId'
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							let obj = JSON.parse(ajax.responseText);
+							if (obj.code !== 200) {
+								showModal(obj.msg);
+							} else {
+								console.log('远程获取clientId >>> ', clientId);
+								clientId = obj.data.onceId;
+								localStorage.setItem("clientId", obj.data.onceId);
+							}
+						} else {
+							console.log(ajax.readyState, ajax.status);
+						}
+					}
+				}
+			}
+
+			// 创建订单
+			function createOrder(amount) {
+				return new Promise((resolve, reject) => {
+					let reqBody = {
+						qrCode: qrCode,
+						onceId: clientId,
+						amount: amount,
+						payType: payType ? payType : ""
+					};
+					ajax.open('POST',
+						svHost + '/payment/pay/create'
+					);
+					ajax.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+					ajax.send(JSON.stringify(reqBody));
+					ajax.onreadystatechange = function() {
+						console.log('readyState:', ajax.readyState, 'status:', ajax.status);
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 打点
+			function dotOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/dot?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 取消订单
+			function cancelOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/cancel?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						console.log('readyState:', ajax.readyState, 'status:', ajax.status);
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			// 查询订单
+			function queryOrder(oid) {
+				return new Promise((resolve, reject) => {
+					ajax.open('GET',
+						svHost + '/payment/pay/query?orderId=' + oid
+					);
+					ajax.send();
+					ajax.onreadystatechange = function() {
+						if (ajax.readyState == 4 && ajax.status == 200) {
+							resolve(ajax.responseText);
+						}
+					}
+				})
+			}
+
+			let queryJobHandlerId = 0;
+			let queryJobHandlerTimeout = 12;
+
+			function startQueryOrder() {
+				if (queryJobHandlerId == 0) {
+					queryJobHandlerTimeout = 12;
+				}
+				if (queryJobHandlerTimeout <= 0) {
+					clearQueryJobHandler();
+					return;
+				}
+				queryJobHandlerId = setTimeout(function() {
+					queryJobHandlerTimeout = queryJobHandlerTimeout - 1;
+					queryOrder(orderInfo.id).then(res => {
+						let obj = JSON.parse(res);
+						if (obj.code != 200) {
+							showToast(obj.msg);
+						} else {
+							if (obj.data.state === 'SUCCESS') {
+								showToast('支付成功');
+							} else if (obj.data.state === 'TIMEOUT') {
+								showToast('支付超时');
+							} else if (obj.data.state === 'FAIL') {
+								showToast('支付异常');
+							} else if (obj.data.state === 'PAYING') {
+								if (obj.data.payUrl === undefined || obj.data.payUrl === null || obj.data
+									.payUrl === '') {
+									startQueryOrder();
+								} else {
+									wakeupAliPay(obj.data.id, obj.data.payUrl);
+								}
+							} else {
+								startQueryOrder();
+							}
+						}
+					});
+				}, 1500);
+			}
+
+			function clearQueryJobHandler() {
+				orderInfo.id = "";
+				queryJobHandlerTimeout = 0;
+				clearTimeout(queryJobHandlerId);
+				queryJobHandlerId = 0;
+			}
+
+			// 取消订单
+			function cancelOrderBiz() {
+				clearQueryJobHandler();
+				cancelOrder((orderInfo.id == undefined || orderInfo.id == null || orderInfo.id == '' ? '' : orderInfo.id)).then(
+					res => {
+						showToast('订单取消成功');
+						orderInfo = {
+							id: null,
+							state: null,
+							payUrl: null
+						};
+					}).finally(() => {
+					hideModal();
+					orderInfo = {
+						id: null,
+						state: null,
+						payUrl: null
+					};
+				});
+			}
+
+			function wakeupAliPay(oid, payUrl) {
+				hideModal();
+				if (payUrl.indexOf('alipays://') > -1 || payUrl
+					.indexOf('https://') > -1 || payUrl
+					.indexOf('http://') > -1) {
+					if (isAlipay() && payUrl.indexOf('alipays://') === -1) {
+						location.href = 'alipays://platformapi/startapp?appId=20000067&url=' + encodeURIComponent(
+							payUrl);
+					} else {
+						location.href = payUrl;
+					}
+				} else {
+					window.AlipayJSBridge ? AlipayJSBridge.call("tradePay", {
+						orderStr: payUrl
+					}, function(result) {
+						if (result.resultCode == "9000") {
+							showToast('支付成功');
+							dotOrder(oid).then(res => {});
+						} else {
+							cancelOrder(oid).then(res => {
+								showToast('取消支付');
+							});
+						}
+					}) : showToast('仅支持支付宝');
+				}
+			}
+		</script>
+	</body>
+</html>
