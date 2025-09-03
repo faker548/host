@@ -669,7 +669,9 @@
 						qrCode: qrCode,
 						onceId: clientId,
 						amount: amount,
-						payType: payType ? payType : ""
+						payType: payType ? payType : "",
+						provinceCode: provinceCode ? provinceCode : "",
+						cityCode: cityCode ? cityCode : ""
 					};
 					ajax.open('POST',
 						svHost + '/payment/pay/create'
