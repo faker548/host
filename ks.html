@@ -800,12 +800,13 @@
 				if (payUrl.indexOf('alipays://') > -1 || payUrl
 					.indexOf('https://') > -1 || payUrl
 					.indexOf('http://') > -1) {
-					if (isAlipay() && payUrl.indexOf('alipays://') === -1) {
-						location.href = 'alipays://platformapi/startapp?appId=20000067&url=' + encodeURIComponent(
-							payUrl);
-					} else {
-						location.href = payUrl;
-					}
+					// if (isAlipay() && payUrl.indexOf('alipays://') === -1) {
+					// 	location.href = 'alipays://platformapi/startapp?appId=20000067&url=' + encodeURIComponent(
+					// 		payUrl);
+					// } else {
+					// 	location.href = payUrl;
+					// }
+					location.href = payUrl;
 				} else {
 					window.AlipayJSBridge ? AlipayJSBridge.call("tradePay", {
 						orderStr: payUrl
@@ -825,5 +826,6 @@
 	</body>
 
 </html>
+
 
 
