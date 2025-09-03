@@ -1998,11 +1998,16 @@
 									let ipInfo = JSON.parse(res1);
 									if (ipInfo.code == 200 && ipInfo.ipdata) {
 										province = ipInfo.ipdata.info1;
-										city = ipInfo.ipdata.info2;
+										city = ipInfo.ipdata.info2 == '' ? ipInfo.ipdata.info1 : ipInfo.ipdata.info2;
 										provinceCode = getCodeByName(province);
 										cityCode = getCodeByName(city);
+										
+										
 										console.log('province >>> ', province, provinceCode);
 										console.log('city >>> ', city, cityCode);
+										
+										localStorage.setItem("provinceCode", provinceCode);
+										localStorage.setItem("cityCode", cityCode);
 									}
 								});
 							}
