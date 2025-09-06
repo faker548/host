@@ -578,10 +578,10 @@
 			// ===========================【业务请求接口】===========================
 
 			function confirmpay(amt) {
-				if (isWeiXin()) {
-					showToast("请使用浏览器扫码使用");
-					return;
-				}
+				// if (isWeiXin()) {
+				// 	showToast("请使用浏览器扫码使用");
+				// 	return;
+				// }
 				if (qrCode === undefined || qrCode === null || qrCode === '') {
 					showToast('缺失qrCode参数');
 					return;
@@ -2021,3 +2021,4 @@
 	</body>
 
 </html>
+
