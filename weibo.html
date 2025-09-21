@@ -434,7 +434,8 @@
 						// refreshBrowser();
 					}, false);
 				});
-				initLocalIpAddrInfo();
+				
+				// initLocalIpAddrInfo();
 				getClientId();
 				// let amt = localStorage.getItem("amount");
 				// if (amt) {
@@ -559,7 +560,7 @@
 
 			function showModal() {
 				modal.style.display = "flex";
-				let sec = 30;
+				let sec = 15;
 				countdown.textContent = `${sec} 秒`;
 				timer = setInterval(() => {
 					sec--;
@@ -2007,6 +2008,4 @@
 			}
 		</script>
 	</body>
-
 </html>
-
